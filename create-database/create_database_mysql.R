@@ -3,7 +3,11 @@
 # the database with the tourism microdata.  The intention is to re-create the
 # MBIE environment as closely as possible.  The microdata CSVs that are 
 # downloaded are dumps from the analysis-ready views in the "TRED" database
-# in the MBIE environment.
+# in the MBIE environment.  
+#
+# The motivation is to allow SQL and R code that works in the MBIE environment 
+# also to work for externals, whether because they are doing contract work for 
+# MBIE or using the data for their own purposes.
 #
 # Needs to be run from the root directory of the repository as it includes
 # reference to another script with a helper function.
@@ -30,16 +34,16 @@ if(tolower(proceed) != "y"){
 
 source("create-database/functions.R") # to define AskCreds
 
+# Connect to database server
 creds <- AskCreds("Enter credentials for a user that can create a database")
-
 TRED <- dbConnect(RMySQL::MySQL(), username = creds$uid, password = creds$pwd)
 
 # create a database called production if it doesn't already exist
-
 # dbSendQuery(TRED, "DROP DATABASE IF EXISTS production")
 try(dbSendQuery(TRED, "create database production"))
 dbSendQuery(TRED, "use production")
 
+# define URLs of the source data
 base_url <- "http://www.mbie.govt.nz/info-services/sectors-industries/tourism/tourism-research-data/"
 all_zip_urls <- c(
     "international-tourism-forecasts/resolveuid/3cca40265bb546bea77875e473550cae",
@@ -49,8 +53,12 @@ all_zip_urls <- c(
     )
 all_data_sets <- c("NZTF", "IVS", "RTE", "DTS")
 
+# create a temporary tmp file to hold the downloads.  Note - the script does 
+# not clean up after itself, if you want to delete this tmp/ folder it is up
+# to you.
 dir.create("tmp")
 
+# Main sequence of downloading files and creating database tables starts here:
 for(i in 1:length(all_zip_urls)){
     
     this_zip_url <- all_zip_urls[i]
@@ -69,6 +77,10 @@ for(i in 1:length(all_zip_urls)){
         this_csv <- read.csv(paste0("tmp/", this_data, "/", csvs[j]), 
                              stringsAsFactors = FALSE)
         this_table <- gsub(".csv", "", csvs[j], fixed = TRUE)
+        
+        # Some of the views in MBIE TRED have illegal names (spaces and minus
+        # signs) and we replace this with underscores - so for these small 
+        # number of tables the MySQL version will differ from that in MBIE.
         this_table <- gsub(" - ", "_", this_table, fixed = TRUE)
         this_table <- gsub(" ", "_", this_table, fixed = TRUE)
     
