@@ -2,9 +2,9 @@ library(RMySQL) # for connecting to database
 library(tcltk2) # for AskCreds
 
 message(
-"Running this script will delete the 'Production' database on your
-MySQL server and download all tourism data from scratch.  Are you sure 
-you want to proceed? [y/n] ")
+"Running this script will download all New Zealand tourism data from scratch and
+over-write any existing tables with comparable names in the database named 
+'production' of your MySQL server.  Are you sure you want to proceed? [y/n] ")
 proceed <- readLines(n = 1)
 if(tolower(proceed) != "y"){
     stop("Aborting database build.")
@@ -18,8 +18,8 @@ TRED <- dbConnect(RMySQL::MySQL(), username = creds$uid, password = creds$pwd)
 
 # create a database called production if it doesn't already exist
 
-dbSendQuery(TRED, "DROP DATABASE IF EXISTS production")
-dbSendQuery(TRED, "create database production")
+# dbSendQuery(TRED, "DROP DATABASE IF EXISTS production")
+try(dbSendQuery(TRED, "create database production"))
 dbSendQuery(TRED, "use production")
 
 base_url <- "http://www.mbie.govt.nz/info-services/sectors-industries/tourism/tourism-research-data/"
@@ -41,6 +41,7 @@ for(i in 1:length(all_zip_urls)){
                   destfile = this_zip_file,
                   mode     = "wb")
     unzip(this_zip_file, exdir = "tmp")
+    message(paste("Finished unzipping", this_zip_file))
     
     csvs <- dir(paste0("tmp/", this_data), full.names = FALSE)
     
@@ -48,6 +49,8 @@ for(i in 1:length(all_zip_urls)){
         this_csv <- read.csv(paste0("tmp/", this_data, "/", csvs[j]), 
                              stringsAsFactors = FALSE)
         this_table <- gsub(".csv", "", csvs[j], fixed = TRUE)
+        this_table <- gsub(" - ", "_", this_table, fixed = TRUE)
+        this_table <- gsub(" ", "_", this_table, fixed = TRUE)
     
         dbSendQuery(TRED, paste("DROP TABLE IF EXISTS", this_table))
         message(paste("Writing", this_table))
@@ -60,10 +63,15 @@ for(i in 1:length(all_zip_urls)){
         # primary key (this is not good database practice, but does the job for
         # these relatively small datasets)
         if(length(unique(this_csv$SurveyResponseID)) == nrow(this_csv)){
+            message (paste("Using SurveyResponseID as primary key on", this_table))
             indexing_sql <- paste("ALTER TABLE", this_table, 
                                   "ADD PRIMARY KEY(SurveyResponseID)")
         } else {
             if("SurveyResponseID" %in% names(this_csv)){
+                message(paste("Adding a primary key to", this_table))
+                dbSendQuery(TRED, paste("ALTER TABLE", this_table, "ADD pk_column INT AUTO_INCREMENT PRIMARY KEY;"))
+                
+                message(paste("Adding a SurveyResponseID index to", this_table))
                 indexing_sql <- paste("CREATE INDEX SurveyResponseID ON", 
                                       this_table,
                                       "(SurveyResponseID)")
@@ -72,7 +80,7 @@ for(i in 1:length(all_zip_urls)){
             }
             
         }
-        message(paste("Indexing", table_name))
+        
         dbSendQuery(TRED, indexing_sql)
     
     }
@@ -83,4 +91,4 @@ for(i in 1:length(all_zip_urls)){
 
 # dbListTables(TRED)
 # 
-# dbGetQuery(TRED, "select * from vw_nztfsurveymainheader limit 10")
+# dbGetQuery(TRED, "select * from vw_ivsactivities limit 10")
