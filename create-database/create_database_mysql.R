@@ -1,3 +1,21 @@
+# This script downloads about 100MB of tourism microdata from the MBIE website,
+# creates a database called 'production' on a MySQL connection and populates
+# the database with the tourism microdata.  The intention is to re-create the
+# MBIE environment as closely as possible.  The microdata CSVs that are 
+# downloaded are dumps from the analysis-ready views in the "TRED" database
+# in the MBIE environment.
+#
+# Needs to be run from the root directory of the repository as it includes
+# reference to another script with a helper function.
+#
+# You need a working connection to a MySQL server that can be accessed via 
+# RMySQL, and credentials that allow you to create databases and tables.
+# The script could be easily adapted for other database platforms, pull requests
+# will be considered.
+#
+# Peter Ellis, 23 April 2016
+
+
 library(RMySQL) # for connecting to database
 library(tcltk2) # for AskCreds
 
@@ -25,9 +43,11 @@ dbSendQuery(TRED, "use production")
 base_url <- "http://www.mbie.govt.nz/info-services/sectors-industries/tourism/tourism-research-data/"
 all_zip_urls <- c(
     "international-tourism-forecasts/resolveuid/3cca40265bb546bea77875e473550cae",
-    "ivs/resolveuid/5e6c0e5b19bb47a68205ac1247cde8f0"
+    "ivs/resolveuid/5e6c0e5b19bb47a68205ac1247cde8f0",
+    "regional-tourism-estimates/resolveuid/49a250d6850d4220b97454b79ba42baf",
+    "domestic-travel-survey/resolveuid/d063c547e2044c1281bbbc4dab310659"
     )
-all_data_sets <- c("NZTF", "IVS")
+all_data_sets <- c("NZTF", "IVS", "RTE", "DTS")
 
 dir.create("tmp")
 
