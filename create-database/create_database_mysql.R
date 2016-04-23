@@ -56,7 +56,7 @@ all_data_sets <- c("NZTF", "IVS", "RTE", "DTS")
 # create a temporary tmp file to hold the downloads.  Note - the script does 
 # not clean up after itself, if you want to delete this tmp/ folder it is up
 # to you.
-dir.create("tmp")
+dir.create("tmp", showWarnings = FALSE)
 
 # Main sequence of downloading files and creating database tables starts here:
 for(i in 1:length(all_zip_urls)){
@@ -69,6 +69,13 @@ for(i in 1:length(all_zip_urls)){
                   destfile = this_zip_file,
                   mode     = "wb")
     unzip(this_zip_file, exdir = "tmp")
+    if(this_data == "RTE"){
+        dir.create("tmp/RTE", showWarnings = FALSE)
+        file.rename("tmp/vw_RTESurveyMainHeader.csv",
+                    "tmp/RTE/vw_RTESurveyMainHeader.csv")
+        file.rename("tmp/vw_RTESpend.csv",
+                    "tmp/RTE/vw_RTESpend.csv")
+    }
     message(paste("Finished unzipping", this_zip_file))
     
     csvs <- dir(paste0("tmp/", this_data), full.names = FALSE)
