@@ -39,7 +39,6 @@ creds <- AskCreds("Enter credentials for a user that can create a database")
 TRED <- dbConnect(RMySQL::MySQL(), username = creds$uid, password = creds$pwd)
 
 # create a database called production if it doesn't already exist
-# dbSendQuery(TRED, "DROP DATABASE IF EXISTS production")
 try(dbSendQuery(TRED, "create database production"))
 dbSendQuery(TRED, "use production")
 
