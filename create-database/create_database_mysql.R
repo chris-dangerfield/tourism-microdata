@@ -47,10 +47,9 @@ base_url <- "http://www.mbie.govt.nz/info-services/sectors-industries/tourism/to
 all_zip_urls <- c(
     "international-tourism-forecasts/resolveuid/3cca40265bb546bea77875e473550cae",
     "ivs/resolveuid/5e6c0e5b19bb47a68205ac1247cde8f0",
-    "regional-tourism-estimates/resolveuid/49a250d6850d4220b97454b79ba42baf",
     "domestic-travel-survey/resolveuid/d063c547e2044c1281bbbc4dab310659"
     )
-all_data_sets <- c("NZTF", "IVS", "RTE", "DTS")
+all_data_sets <- c("NZTF", "IVS", "DTS")
 
 # create a temporary tmp file to hold the downloads.  Note - the script does 
 # not clean up after itself, if you want to delete this tmp/ folder it is up
@@ -81,7 +80,7 @@ for(i in 1:length(all_zip_urls)){
     
     for(j in 1:length(csvs)){
         this_csv <- read.csv(paste0("tmp/", this_data, "/", csvs[j]), 
-                             stringsAsFactors = FALSE)
+                             stringsAsFactors = FALSE, encoding = "UTF-8")
         this_table <- gsub(".csv", "", csvs[j], fixed = TRUE)
         
         # Some of the views in MBIE TRED have illegal names (spaces and minus
